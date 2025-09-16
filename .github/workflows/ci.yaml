@@ -20,7 +20,7 @@ jobs:
   # Backend Build + Test + Scan
   # ============================
   backend:
-    runs-on: self-hosted
+    runs-on: Default
     steps:
       - uses: actions/checkout@v3
 
@@ -59,7 +59,7 @@ jobs:
   # Frontend Build + Scan
   # ============================
   frontend:
-    runs-on: self-hosted
+    runs-on: Default
     steps:
       - uses: actions/checkout@v3
 
@@ -98,7 +98,7 @@ jobs:
   # Deploy Canary (Flagger + Istio)
   # ============================
   deploy:
-    runs-on: self-hosted
+    runs-on: Default
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v3
