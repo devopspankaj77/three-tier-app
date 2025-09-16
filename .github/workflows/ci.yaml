@@ -1,113 +1,129 @@
-trigger:
-  branches:
-    include:
+name: CI-CD-ThreeTierApp
+
+on:
+  push:
+    branches:
       - main
+  pull_request:
 
-variables:
-  acrName: myacr.azurecr.io
-  namespace: onetouch
+env:
+  REGISTRY: docker.io
+  DOCKER_USER: ${{ secrets.DOCKER_USER }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  NAMESPACE: onetouch
 
-  backendImage: backend
-  frontendImage: frontend
-  backendTag: $(Build.BuildId)
-  frontendTag: $(Build.BuildId)
+  BACKEND_IMAGE: pankajdevops2403/backend
+  FRONTEND_IMAGE: pankajdevops2403/frontend
 
-stages:
+jobs:
   # ============================
   # Backend Build + Test + Scan
   # ============================
-  - stage: Backend
-    jobs:
-      - job: Backend
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '18.x'
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-          - script: |
-              cd backend
-              npm install
-              npm test
-            displayName: "Install & Test Backend"
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-          - script: |
-              npx eslint . || true
-            displayName: "Run ESLint (SAST) - Backend"
+      - name: Install & Test Backend
+        run: |
+          cd backend
+          npm install
+          npm test
 
-          - task: Docker@2
-            inputs:
-              command: buildAndPush
-              repository: $(backendImage)
-              dockerfile: backend/Dockerfile
-              containerRegistry: $(acrName)
-              tags: |
-                $(backendTag)
+      - name: Run ESLint (SAST) - Backend
+        run: |
+          cd backend
+          npx eslint . || true
 
-          - script: |
-              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-              ./trivy image --severity HIGH,CRITICAL $(acrName)/$(backendImage):$(backendTag) || true
-            displayName: "Trivy Scan Backend Image"
+      - name: Log in to DockerHub
+        run: echo "${{ env.DOCKER_PASSWORD }}" | docker login -u "${{ env.DOCKER_USER }}" --password-stdin
+
+      - name: Build & Push Backend
+        run: |
+          docker build -t $REGISTRY/${{ env.BACKEND_IMAGE }}:${{ github.sha }} ./backend
+          docker push $REGISTRY/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+
+      - name: Trivy Scan Backend
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: $REGISTRY/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0'
 
   # ============================
   # Frontend Build + Scan
   # ============================
-  - stage: Frontend
-    jobs:
-      - job: Frontend
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '18.x'
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-          - script: |
-              cd frontend
-              npm install
-              npm run build
-            displayName: "Build Frontend"
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-          - script: |
-              npx eslint . || true
-            displayName: "Run ESLint (SAST) - Frontend"
+      - name: Install & Build Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
 
-          - task: Docker@2
-            inputs:
-              command: buildAndPush
-              repository: $(frontendImage)
-              dockerfile: frontend/Dockerfile
-              containerRegistry: $(acrName)
-              tags: |
-                $(frontendTag)
+      - name: Run ESLint (SAST) - Frontend
+        run: |
+          cd frontend
+          npx eslint . || true
 
-          - script: |
-              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-              ./trivy image --severity HIGH,CRITICAL $(acrName)/$(frontendImage):$(frontendTag) || true
-            displayName: "Trivy Scan Frontend Image"
+      - name: Log in to DockerHub
+        run: echo "${{ env.DOCKER_PASSWORD }}" | docker login -u "${{ env.DOCKER_USER }}" --password-stdin
+
+      - name: Build & Push Frontend
+        run: |
+          docker build -t $REGISTRY/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} ./frontend
+          docker push $REGISTRY/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+
+      - name: Trivy Scan Frontend
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: $REGISTRY/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0'
 
   # ============================
-  # Deploy with Canary
+  # Deploy Canary (Flagger + Istio)
   # ============================
-  - stage: Deploy
-    dependsOn: [Backend, Frontend]
-    jobs:
-      - job: Deploy
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          - script: |
-              kubectl config use-context $(KUBE_CONTEXT)
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v3
 
-              # Update Canary images
-              kubectl set image deployment/backend-canary \
-                backend=$(acrName)/$(backendImage):$(backendTag) -n $(namespace)
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.29.0'
 
-              kubectl set image deployment/frontend-canary \
-                frontend=$(acrName)/$(frontendImage):$(frontendTag) -n $(namespace)
+      - name: Setup Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" > $HOME/.kube/config
 
-              # If ArgoCD GitOps is used
-              argocd app sync frontend-app || true
-              argocd app sync backend-app || true
-            displayName: "Deploy Canary Versions"
+      - name: Update Backend Canary
+        run: |
+          kubectl set image deployment/backend \
+            backend=$REGISTRY/${{ env.BACKEND_IMAGE }}:${{ github.sha }} -n $NAMESPACE
+
+      - name: Update Frontend Canary
+        run: |
+          kubectl set image deployment/frontend \
+            frontend=$REGISTRY/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} -n $NAMESPACE
+
+      - name: Verify Canary Rollout (Flagger)
+        run: |
+          kubectl -n $NAMESPACE describe canary backend || true
+          kubectl -n $NAMESPACE describe canary frontend || true
