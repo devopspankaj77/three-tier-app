@@ -30,11 +30,11 @@ jobs:
           node-version: 18
 
       - name: Install Backend Dependencies
-        working-directory: backend
+        working-directory: ./three-tier-app/backend
         run: npm install
 
       - name: Build Backend
-        working-directory: backend
+        working-directory: ./three-tier-app/backend
         run: npm run build
 
       - name: Run ESLint (SAST) - Backend
@@ -72,13 +72,13 @@ jobs:
           node-version: 18
 
       - name: Install & Build Frontend
-        working-directory: frontend
+        working-directory: ./three-tier-app/frontend
         run: |
           npm install
           npm run build
 
       - name: Run ESLint (SAST) - Frontend
-        working-directory: frontend
+        working-directory: ./three-tier-app/frontend
         run: npx eslint . || true
 
       - name: Log in to DockerHub
