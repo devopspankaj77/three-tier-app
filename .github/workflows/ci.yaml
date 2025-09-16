@@ -86,6 +86,6 @@ jobs:
           sed -i "s|IMAGE_FRONTEND|${{ secrets.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}|g" k8s-manifests/frontend-deployment.yaml
           sed -i "s|IMAGE_BACKEND|${{ secrets.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}|g" k8s-manifests/backend-deployment.yaml
 
-      # - name: Deploy to Kubernetes
-      #   run: |
-      #     kubectl apply -f k8s-manifests/
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s-manifests/
