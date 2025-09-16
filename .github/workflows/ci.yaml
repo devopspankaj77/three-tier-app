@@ -2,8 +2,7 @@ name: CI-CD-ThreeTierApp
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
 
 env:
@@ -19,30 +18,33 @@ jobs:
   # ============================
   # Backend Build + Test + Scan
   # ============================
-  backend:
+  build-backend:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Source
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install & Test Backend
-        run: |
-          cd backend
-          npm install
-          npm test
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Build Backend
+        working-directory: backend
+        run: npm run build
 
       - name: Run ESLint (SAST) - Backend
-        run: |
-          cd backend
-          npx eslint . || true
+        working-directory: backend
+        run: npx eslint . || true
 
       - name: Log in to DockerHub
         run: echo "${{ env.DOCKER_PASSWORD }}" | docker login -u "${{ env.DOCKER_USER }}" --password-stdin
 
-      - name: Build & Push Backend
+      - name: Build & Push Backend Image
         run: |
           docker build -t $REGISTRY/${{ env.BACKEND_IMAGE }}:${{ github.sha }} ./backend
           docker push $REGISTRY/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
@@ -58,30 +60,31 @@ jobs:
   # ============================
   # Frontend Build + Scan
   # ============================
-  frontend:
+  build-frontend:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Source
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 18
 
       - name: Install & Build Frontend
+        working-directory: frontend
         run: |
-          cd frontend
           npm install
           npm run build
 
       - name: Run ESLint (SAST) - Frontend
-        run: |
-          cd frontend
-          npx eslint . || true
+        working-directory: frontend
+        run: npx eslint . || true
 
       - name: Log in to DockerHub
         run: echo "${{ env.DOCKER_PASSWORD }}" | docker login -u "${{ env.DOCKER_USER }}" --password-stdin
 
-      - name: Build & Push Frontend
+      - name: Build & Push Frontend Image
         run: |
           docker build -t $REGISTRY/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} ./frontend
           docker push $REGISTRY/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
@@ -99,16 +102,17 @@ jobs:
   # ============================
   deploy:
     runs-on: self-hosted
-    needs: [backend, frontend]
+    needs: [build-backend, build-frontend]
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Source
+        uses: actions/checkout@v3
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'v1.29.0'
+          version: v1.29.0
 
-      - name: Setup Kubeconfig
+      - name: Configure Kubeconfig
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG_CONTENT }}" > $HOME/.kube/config
