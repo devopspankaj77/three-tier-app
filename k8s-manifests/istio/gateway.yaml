@@ -1,0 +1,39 @@
+# Replace gateway name/namespace if your Istio setup differs. 
+# This example assumes Istio's ingress gateway is in istio-system with name istio-ingressgateway.
+
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: app-gateway
+  namespace: onetouch
+spec:
+  selector:
+    istio: istio-ingressgateway   # uses the istio ingressgateway in istio-system
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+
+# If selector doesn't match your cluster's Istio install,
+#  set selector: istio: ingressgateway and place the Gateway in namespace where you want it. 
+# Sometimes ingress gateway is in istio-system.
+
+# Step 1: Check which ingress gateway is installed
+# kubectl get svc -n istio-system
+# kubectl get pods -n istio-system -l istio=ingressgateway
+# kubectl get deploy -n istio-system istio-ingressgateway -o yaml | grep "labels:" -A5
+
+# Step 3: Gateway namespace check
+
+# By default, istio-ingressgateway deployment istio-system namespace me hota hai.
+# Par aap Gateway resource kisi bhi namespace me bana sakte ho (jaise onetouch).
+# Gateway selector ke labels ke through Istio ingressgateway pod se bind ho jata hai — chahe wo istio-system me ho.
+
+# ✅ Summary rule:
+# Dekho kubectl get deploy -n istio-system istio-ingressgateway -o yaml
+# Uske labels copy karo → wahi apne Gateway ke selector me daal do.
+# Gateway resource aapki app namespace (onetouch) me reh sakta hai, bas selector label ingressgateway pod se match hona chahiye.
+

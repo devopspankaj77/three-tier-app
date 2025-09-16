@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: frontend-vs
+  namespace: onetouch
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - istio-system/istio-ingressgateway
+  http:
+  - match:
+    - uri:
+        prefix: "/"
+    route:
+    - destination:
+        host: frontend.onetouch.svc.cluster.local
+        port:
+          number: 80

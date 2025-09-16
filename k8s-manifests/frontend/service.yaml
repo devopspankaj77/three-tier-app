@@ -1,0 +1,14 @@
+# Purpose: expose frontend inside cluster (Istio will route external traffic to it).
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: onetouch
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80  
+      targetPort: 80  
+ 

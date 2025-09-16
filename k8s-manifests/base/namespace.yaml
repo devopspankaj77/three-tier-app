@@ -1,0 +1,5 @@
+# single namespace where app will run
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: onetouch
