@@ -1,39 +1,113 @@
-name: CI - Build & Push
-
-on:
-  push:
-    branches:
+trigger:
+  branches:
+    include:
       - main
 
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+variables:
+  acrName: myacr.azurecr.io
+  namespace: onetouch
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
+  backendImage: backend
+  frontendImage: frontend
+  backendTag: $(Build.BuildId)
+  frontendTag: $(Build.BuildId)
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+stages:
+  # ============================
+  # Backend Build + Test + Scan
+  # ============================
+  - stage: Backend
+    jobs:
+      - job: Backend
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+          - script: |
+              cd backend
+              npm install
+              npm test
+            displayName: "Install & Test Backend"
 
-    - name: Build and push backend
-      uses: docker/build-push-action@v4
-      with:
-        context: ./backend
-        push: true
-        tags: docker.io/pankajdevops2403/backend:latest
+          - script: |
+              npx eslint . || true
+            displayName: "Run ESLint (SAST) - Backend"
 
-    - name: Build and push frontend
-      uses: docker/build-push-action@v4
-      with:
-        context: ./frontend
-        push: true
-        tags: docker.io/pankajdevops2403/frontend:latest
+          - task: Docker@2
+            inputs:
+              command: buildAndPush
+              repository: $(backendImage)
+              dockerfile: backend/Dockerfile
+              containerRegistry: $(acrName)
+              tags: |
+                $(backendTag)
+
+          - script: |
+              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+              ./trivy image --severity HIGH,CRITICAL $(acrName)/$(backendImage):$(backendTag) || true
+            displayName: "Trivy Scan Backend Image"
+
+  # ============================
+  # Frontend Build + Scan
+  # ============================
+  - stage: Frontend
+    jobs:
+      - job: Frontend
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
+
+          - script: |
+              cd frontend
+              npm install
+              npm run build
+            displayName: "Build Frontend"
+
+          - script: |
+              npx eslint . || true
+            displayName: "Run ESLint (SAST) - Frontend"
+
+          - task: Docker@2
+            inputs:
+              command: buildAndPush
+              repository: $(frontendImage)
+              dockerfile: frontend/Dockerfile
+              containerRegistry: $(acrName)
+              tags: |
+                $(frontendTag)
+
+          - script: |
+              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+              ./trivy image --severity HIGH,CRITICAL $(acrName)/$(frontendImage):$(frontendTag) || true
+            displayName: "Trivy Scan Frontend Image"
+
+  # ============================
+  # Deploy with Canary
+  # ============================
+  - stage: Deploy
+    dependsOn: [Backend, Frontend]
+    jobs:
+      - job: Deploy
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - script: |
+              kubectl config use-context $(KUBE_CONTEXT)
+
+              # Update Canary images
+              kubectl set image deployment/backend-canary \
+                backend=$(acrName)/$(backendImage):$(backendTag) -n $(namespace)
+
+              kubectl set image deployment/frontend-canary \
+                frontend=$(acrName)/$(frontendImage):$(frontendTag) -n $(namespace)
+
+              # If ArgoCD GitOps is used
+              argocd app sync frontend-app || true
+              argocd app sync backend-app || true
+            displayName: "Deploy Canary Versions"
