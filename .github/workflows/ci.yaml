@@ -96,8 +96,8 @@ jobs:
 
       - name: Update K8s Manifests
         run: |
-          sed -i "s|IMAGE_FRONTEND|${{ env.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}|g" k8s-manifests/frontend-deployment.yaml
-          sed -i "s|IMAGE_BACKEND|${{ env.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}|g" k8s-manifests/backend-deployment.yaml
+          sed -i "s|IMAGE_FRONTEND|${{ env.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}|g" k8s-manifests/frontend/deployment.yaml
+          sed -i "s|IMAGE_BACKEND|${{ env.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}|g" k8s-manifests/backend/deployment.yaml
 
       # ArgoCD + Istio + Flagger integration (image update)
       - name: Sync ArgoCD App

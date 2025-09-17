@@ -1,5 +1,5 @@
 # Use Node.js base image
-FROM node:18-alpine as build
+FROM node:18-alpine AS build
 
 # Set environment variables
 ENV NODE_OPTIONS=--openssl-legacy-provider
