@@ -30,8 +30,13 @@ jobs:
       - name: Install dependencies (Frontend)
         run: npm install
 
-      - name: Build frontend
-        run: npm run build
+      - name: Set NODE_OPTIONS environment variable to bypass OpenSSL issue
+        run: |
+          export NODE_OPTIONS=--openssl-legacy-provider
+          npm run build
+
+      # - name: Build frontend
+      #   run: npm run build
 
       - name: Build Docker image (Frontend)
         run: |
