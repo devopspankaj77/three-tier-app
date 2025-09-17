@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+permissions:
+  contents: write
 
 env:
   DOCKER_HUB_USERNAME: pankajdevops2403
@@ -99,3 +101,16 @@ jobs:
           sed -i "s|docker.io/pankajdevops2403/backend:.*|docker.io/pankajdevops2403/backend:${{ github.sha }}|g" k8s-manifests/backend/deployment.yaml
           sed -i "s|docker.io/pankajdevops2403/frontend:.*|docker.io/pankajdevops2403/frontend:${{ github.sha }}|g" k8s-manifests/frontend/deployment.yaml
       
+
+      - name: Commit and Push updated manifests
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add k8s-manifests/
+          git commit -m "Update image tags to ${{ github.sha }}"
+          git push origin main
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/download/v2.11.2/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/argocd
