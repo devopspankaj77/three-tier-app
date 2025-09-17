@@ -9,8 +9,7 @@ on:
       - main
   variables:
     DOCKER_HUB_USERNAME: devopspankaj77
-    DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
-    KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+    
 
   jobs:
   build-frontend:
@@ -35,11 +34,11 @@ on:
 
       - name: Build Docker image (Frontend)
         run: |
-          docker build -t devopspankaj77/frontend:${{ github.sha }} .
+          docker build -t ${{ DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }} .
 
       - name: Push Docker image (Frontend)
         run: |
-          # echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ DOCKER_HUB_USERNAME }}" --password-stdin
+        
           docker push ${{ DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}
 
   build-backend:
@@ -68,7 +67,7 @@ on:
 
       - name: Push Docker image (Backend)
         run: |
-          # echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+         
           docker push ${{ DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}
 
   deploy:
@@ -92,6 +91,6 @@ on:
           sed -i "s|IMAGE_FRONTEND|${{ DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}|g" k8s-manifests/frontend-deployment.yaml
           sed -i "s|IMAGE_BACKEND|${{ DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}|g" k8s-manifests/backend-deployment.yaml
 
-      - name: Deploy to Kubernetes
-        run: |
-          kubectl apply -f k8s-manifests/
+      # - name: Deploy to Kubernetes
+      #   run: |
+      #     kubectl apply -f k8s-manifests/
