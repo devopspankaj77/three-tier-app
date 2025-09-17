@@ -39,6 +39,7 @@ jobs:
 
       - name: Push Docker image (Frontend)
         run: |
+          docker login
           docker push ${{ env.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}
 
   build-backend:
@@ -68,6 +69,7 @@ jobs:
 
       - name: Push Docker image (Backend)
         run: |
+          docker login
           docker push ${{ env.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}
 
   deploy:
