@@ -7,11 +7,11 @@ on:
   pull_request:
     branches:
       - main
-  variables:
-    DOCKER_HUB_USERNAME: devopspankaj77
-    
 
-  jobs:
+env:
+  DOCKER_HUB_USERNAME: devopspankaj77
+
+jobs:
   build-frontend:
     runs-on: self-hosted
     defaults:
@@ -34,12 +34,11 @@ on:
 
       - name: Build Docker image (Frontend)
         run: |
-          docker build -t ${{ DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }} .
+          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }} .
 
       - name: Push Docker image (Frontend)
         run: |
-        
-          docker push ${{ DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}
+          docker push ${{ env.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}
 
   build-backend:
     runs-on: self-hosted
@@ -63,12 +62,11 @@ on:
 
       - name: Build Docker image (Backend)
         run: |
-          docker build -t ${{ DOCKER_HUB_USERNAME }}/backend:${{ github.sha }} .
+          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }} .
 
       - name: Push Docker image (Backend)
         run: |
-         
-          docker push ${{ DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}
+          docker push ${{ env.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}
 
   deploy:
     runs-on: self-hosted
@@ -84,13 +82,16 @@ on:
 
       - name: Configure Kubeconfig
         run: |
+          mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
 
       - name: Update K8s Manifests
         run: |
-          sed -i "s|IMAGE_FRONTEND|${{ DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}|g" k8s-manifests/frontend-deployment.yaml
-          sed -i "s|IMAGE_BACKEND|${{ DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}|g" k8s-manifests/backend-deployment.yaml
+          sed -i "s|IMAGE_FRONTEND|${{ env.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}|g" k8s-manifests/frontend-deployment.yaml
+          sed -i "s|IMAGE_BACKEND|${{ env.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}|g" k8s-manifests/backend-deployment.yaml
 
-      # - name: Deploy to Kubernetes
-      #   run: |
-      #     kubectl apply -f k8s-manifests/
+      # ArgoCD + Istio + Flagger integration (image update)
+      - name: Sync ArgoCD App
+        run: |
+          argocd app sync three-tier-app --prune --grpc-web
+          argocd app wait three-tier-app --timeout 300
