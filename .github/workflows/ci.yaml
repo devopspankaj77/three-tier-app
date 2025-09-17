@@ -5,7 +5,8 @@ on:
     branches:
       - main
   pull_request:
-
+    branches:
+      - main
   variables:
     DOCKER_HUB_USERNAME: devopspankaj77
     DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
@@ -88,8 +89,8 @@ on:
 
       - name: Update K8s Manifests
         run: |
-          sed -i "s|IMAGE_FRONTEND|${{ secrets.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}|g" k8s-manifests/frontend-deployment.yaml
-          sed -i "s|IMAGE_BACKEND|${{ secrets.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}|g" k8s-manifests/backend-deployment.yaml
+          sed -i "s|IMAGE_FRONTEND|${{ DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}|g" k8s-manifests/frontend-deployment.yaml
+          sed -i "s|IMAGE_BACKEND|${{ DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}|g" k8s-manifests/backend-deployment.yaml
 
       - name: Deploy to Kubernetes
         run: |
