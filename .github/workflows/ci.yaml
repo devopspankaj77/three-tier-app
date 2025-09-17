@@ -6,6 +6,11 @@ on:
       - main
   pull_request:
 
+  jobs:
+    build-frontend:
+      runs-on: self-hosted
+      
+
 jobs:
   build-frontend:
     runs-on: self-hosted
