@@ -6,12 +6,12 @@ on:
       - main
   pull_request:
 
-  jobs:
-    build-frontend:
-      runs-on: self-hosted
-      
+  variables:
+    DOCKER_HUB_USERNAME: devopspankaj77
+    DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+    KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
 
-jobs:
+  jobs:
   build-frontend:
     runs-on: self-hosted
     defaults:
@@ -34,12 +34,12 @@ jobs:
 
       - name: Build Docker image (Frontend)
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }} .
+          docker build -t devopspankaj77/frontend:${{ github.sha }} .
 
       - name: Push Docker image (Frontend)
         run: |
-          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}
+          # echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ DOCKER_HUB_USERNAME }}" --password-stdin
+          docker push ${{ DOCKER_HUB_USERNAME }}/frontend:${{ github.sha }}
 
   build-backend:
     runs-on: self-hosted
@@ -63,12 +63,12 @@ jobs:
 
       - name: Build Docker image (Backend)
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }} .
+          docker build -t ${{ DOCKER_HUB_USERNAME }}/backend:${{ github.sha }} .
 
       - name: Push Docker image (Backend)
         run: |
-          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}
+          # echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+          docker push ${{ DOCKER_HUB_USERNAME }}/backend:${{ github.sha }}
 
   deploy:
     runs-on: self-hosted
