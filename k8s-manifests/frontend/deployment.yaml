@@ -17,6 +17,7 @@ spec:
       containers:
       - name: frontend
         image: docker.io/pankajdevops2403/frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         envFrom:

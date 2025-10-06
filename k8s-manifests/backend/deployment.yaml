@@ -17,6 +17,7 @@ spec:
       containers:
       - name: backend
         image: docker.io/pankajdevops2403/backend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
 
