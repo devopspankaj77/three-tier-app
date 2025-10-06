@@ -19,24 +19,49 @@ spec:
         image: docker.io/pankajdevops2403/backend:latest
         ports:
         - containerPort: 8080
+
         env:
-          - name: DB_HOST
-            value: mysql.onetouch.svc.cluster.local
-          - name: DB_USER
-            valueFrom:
-              secretKeyRef:
-                name: db-secret
-                key: MYSQL_USER
-          - name: DB_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: db-secret
-                key: MYSQL_PASSWORD
-          - name: DB_NAME
-            valueFrom:
-              secretKeyRef:
-                name: db-secret
-                key: MYSQL_DATABASE
-        envFrom:
-          - configMapRef:
-              name: app-config
+        - name: DB_HOST                             # this is the name mentioned in app code and backend app code will fetch database on this url on starting time
+          value: mysql.onetouch.svc.cluster.local   # MySQL service ka DNS name jo service.yaml me diya hai
+
+        - name: DB_USER                             # backend app will fetch this detail to connect database from secret when will start
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret                     # ye secret file/manifest ka naam hai jahan se app key word MYSQL_USER ki value legi
+              key: MYSQL_USER                        # secret me jo key hai wo yaha dena hai aur uski value milegi
+
+        - name: DB_PASS                             # this is the name mentioned in app code and will be fetched by backend app when it will start and secret file will provide details 
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret                   # secret ka name jahan se value leni hai
+              key: MYSQL_PASS                      # secret me jo key hai wo yaha dena hai aur uski value milegi
+
+        - name: DB_NAME                               # this is the name mentioned in app code 
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config                      # configmap ka name jahan se value lena hai
+              key: MYSQL_DATABASE                     # configmap me jo key hai wo yaha dena hai aur uski value milegi
+
+        # # (Optional but recommended)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+        # # Health checks (important for rolling updates)
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8080
+        #   initialDelaySeconds: 10
+        #   periodSeconds: 15
+
+        # readinessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8080
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 10

@@ -4,10 +4,10 @@ metadata:
   name: mysql
   namespace: onetouch
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: mysql
-  replicas: 1
   template:
     metadata:
       labels:
@@ -18,31 +18,45 @@ spec:
         image: mysql:8.0
         ports:
         - containerPort: 3306
+
         env:
-        - name: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_ROOT_PASSWORD                      # mysql database is created with this root_password
           valueFrom:
             secretKeyRef:
-              name: db-secret
+              name: mysql-secret                        #  
               key: MYSQL_ROOT_PASSWORD
+
         - name: MYSQL_DATABASE
           valueFrom:
-            secretKeyRef:
-              name: db-secret
+            configMapKeyRef:
+              name: mysql-config
               key: MYSQL_DATABASE
+
         - name: MYSQL_USER
           valueFrom:
             secretKeyRef:
-              name: db-secret
+              name: mysql-secret
               key: MYSQL_USER
+
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: db-secret
-              key: MYSQL_PASSWORD
+              name: mysql-secret
+              key: MYSQL_PASS
+
         volumeMounts:
-        - name: mysql-data
+        - name: mysql-persistent-storage
           mountPath: /var/lib/mysql
+
+        # agar init scripts configmap me diye ho to mount karo
+        - name: mysql-initdb                              # ye wahi name hona chahiye jo niche volumes me diya hai
+          mountPath: /docker-entrypoint-initdb.d
+
       volumes:
-      - name: mysql-data
+      - name: mysql-persistent-storage
         persistentVolumeClaim:
           claimName: mysql-pvc
+
+      - name: mysql-initdb                               # 
+        configMap:
+          name: mysql-config
