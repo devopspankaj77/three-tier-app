@@ -103,7 +103,10 @@ jobs:
           kubectl apply -f k8s-manifests/backend/service.yaml 
           kubectl apply -f k8s-manifests/frontend/deployment.yaml
           kubectl apply -f k8s-manifests/frontend/service.yaml
-
+          kubectl apply -f k8s-manifests/database/pvc.yaml
+          kubectl apply -f k8s-manifests/database/deployment.yaml
+          kubectl apply -f k8s-manifests/database/service.yaml
+          
       # - name: Commit and Push updated manifests
       #   run: |
       #     git config --global user.email "github-actions@github.com"
