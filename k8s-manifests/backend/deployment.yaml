@@ -18,7 +18,7 @@ spec:
       - name: backend
         image: docker.io/pankajdevops2403/backend:latest
         ports:
-        - containerPort: 8080
+        - containerPort: 3000
 
         env:
         - name: DB_HOST                             # this is the name mentioned in app code and backend app code will fetch database on this url on starting time

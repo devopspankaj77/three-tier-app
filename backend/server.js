@@ -2,7 +2,7 @@ const express = require("express");
 const mysql = require("mysql2");
 const app = express();
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 const DB_HOST = process.env.DB_HOST || "mysql";
 const DB_USER = process.env.DB_USER || "myuser";
 const DB_PASS = process.env.DB_PASS || "mypassword";

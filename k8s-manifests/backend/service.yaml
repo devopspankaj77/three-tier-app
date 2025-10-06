@@ -9,5 +9,5 @@ spec:
   ports:
     - protocol: TCP
       port: 80          # Exposed port inside the cluster
-      targetPort: 8080  # Container port
+      targetPort: 3000  # Container port
   type: ClusterIP

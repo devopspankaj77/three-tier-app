@@ -97,15 +97,15 @@ jobs:
           sed -i "s|docker.io/pankajdevops2403/backend:.*|docker.io/pankajdevops2403/backend:${{ github.sha }}|g" k8s-manifests/backend/deployment.yaml
           sed -i "s|docker.io/pankajdevops2403/frontend:.*|docker.io/pankajdevops2403/frontend:${{ github.sha }}|g" k8s-manifests/frontend/deployment.yaml
       
-      - name: Apply Kubernetes manifests
-        run: |
-          kubectl apply -f k8s-manifests/backend/deployment.yaml  
-          kubectl apply -f k8s-manifests/backend/service.yaml 
-          kubectl apply -f k8s-manifests/frontend/deployment.yaml
-          kubectl apply -f k8s-manifests/frontend/service.yaml
-          kubectl apply -f k8s-manifests/database/pvc.yaml
-          kubectl apply -f k8s-manifests/database/deployment.yaml
-          kubectl apply -f k8s-manifests/database/service.yaml
+      # - name: Apply Kubernetes manifests
+      #   run: |
+      #     kubectl apply -f k8s-manifests/backend/deployment.yaml  
+      #     kubectl apply -f k8s-manifests/backend/service.yaml 
+      #     kubectl apply -f k8s-manifests/frontend/deployment.yaml
+      #     kubectl apply -f k8s-manifests/frontend/service.yaml
+      #     kubectl apply -f k8s-manifests/database/pvc.yaml
+      #     kubectl apply -f k8s-manifests/database/deployment.yaml
+      #     kubectl apply -f k8s-manifests/database/service.yaml
           
       # - name: Commit and Push updated manifests
       #   run: |
