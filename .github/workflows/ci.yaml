@@ -1,4 +1,4 @@
-name: Three-Tier App CI/CD
+name: Three-Tier App CI/CD for demo using argocd and self-hosted runners
 
 on:
   push:
