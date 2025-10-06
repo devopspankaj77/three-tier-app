@@ -4,6 +4,7 @@ metadata:
   name: mysql-config
   namespace: onetouch 
 data:
+  BACKEND_API_URL: "http://backend.onetouch.svc.cluster.local:8080"
   MYSQL_DATABASE: mysql
   MYSQL_HOST: mysql
   MYSQL_PORT: "3306"

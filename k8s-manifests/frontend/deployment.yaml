@@ -21,4 +21,4 @@ spec:
         - containerPort: 80
         envFrom:
           - configMapRef:
-              name: app-config
+              name: mysql-config

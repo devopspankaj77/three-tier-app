@@ -6,9 +6,11 @@ metadata:
   name: frontend
   namespace: onetouch
 spec:
+  type: NodePort        # 🔥 change this line
   selector:
     app: frontend
   ports:
-    - port: 80  
-      targetPort: 80  
- 
+  - port: 80
+    targetPort: 80
+    nodePort: 30080     # optional, else auto-assign (range 30000–32767)
+
